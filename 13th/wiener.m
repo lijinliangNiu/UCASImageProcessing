@@ -1,37 +1,13 @@
-clc;
-clear;
-close all;
+function [ll, lh_denoise, hl_denoise, hh_denoise] = wiener(img, wname)
+%wiener滤波并返回滤波后的4张图
+[ll, lh, hl, hh]= dwt2(img, wname);
+sigma_n = (median(abs(hh(:))) / 0.6745) ^ 2;
 
-img = imread('lena512color.tiff');
-% subplot(3,2,1);
-% imshow(I);
-% title('原始图像');
-gray = rgb2gray(img);
-% subplot(3,2,2);
-% imshow(J);
-colormap('gray');
-% title('灰度图像');
-img_noise=imnoise(gray, 'salt & pepper', 0.045); 
-subplot(2, 1, 1);
-imshow(img_noise);
+sigma_lh = mean(lh(:).^ 2) - sigma_n;
+sigma_hl = mean(hl(:).^ 2) - sigma_n;
+sigma_hh = mean(hh(:).^ 2) - sigma_n;
 
-[cA, cH, cV, cD] = dwt2(img_noise, 'bior4.4');
-
-sigma_n = median(abs(cA(:))) / 0.6745;
-sigmaA = mean(cA(:).^ 2) - sigma_n ^ 2;
-sigmaH = mean(cH(:).^ 2) - sigma_n ^ 2;
-sigmaV = mean(cV(:).^ 2) - sigma_n ^ 2;
-sigmaD = mean(cD(:).^ 2) - sigma_n ^ 2;
-
-cA_Y = sigmaA ^2 * cA/ ( sigmaA ^2 + sigma_n ^ 2);
-cH_Y = sigmaH ^2 * cH/ ( sigmaH ^2 + sigma_n ^ 2);
-cV_Y = sigmaV ^2 * cV/ ( sigmaV ^2 + sigma_n ^ 2);
-cD_Y = sigmaD ^2 * cD/ ( sigmaD ^2 + sigma_n ^ 2);
-
-XX = idwt2(cA_Y, cH_Y, cV_Y, cD_Y, 'bior4.4');
-XX= uint8(XX);
-subplot(2, 1, 2);
-imshow(XX); 
-
-
-
+lh_denoise = (sigma_lh/ ( sigma_lh + sigma_n)) * lh;
+hl_denoise = (sigma_hl/ ( sigma_hl + sigma_n)) * hl;
+hh_denoise = (sigma_hh/ ( sigma_hh + sigma_n)) * hh;
+end
